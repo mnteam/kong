@@ -268,6 +268,10 @@ for _, strategy in helpers.each_strategy() do
 
             assert.are.same(6, tonumber(res.headers["x-ratelimit-limit-minute"]))
             assert.are.same(6 - i, tonumber(res.headers["x-ratelimit-remaining-minute"]))
+            assert.are.same(6, tonumber(res.headers["ratelimit-limit"]))
+            assert.are.same(6 - i, tonumber(res.headers["ratelimit-remaining"]))
+            local reset = tonumber(res.headers["ratelimit-reset"])
+            assert.equal(true, reset <= 60 and reset >= 0)
           end
 
           -- Additonal request, while limit is 6/minute
@@ -275,8 +279,14 @@ for _, strategy in helpers.each_strategy() do
             headers = { Host = "test1.com" },
           }, 429)
 
+          assert.are.same(6, tonumber(res.headers["ratelimit-limit"]))
+          assert.are.same(0, tonumber(res.headers["ratelimit-remaining"]))
+
           local retry = tonumber(res.headers["retry-after"])
-          assert.equal(true, retry <= 60 and retry >= 0)
+          assert.equal(true, retry <= 60 and retry > 0)
+
+          local reset = tonumber(res.headers["ratelimit-reset"])
+          assert.equal(true, reset <= 60 and reset > 0)
 
           local json = cjson.decode(body)
           assert.same({ message = "API rate limit exceeded" }, json)
@@ -290,6 +300,10 @@ for _, strategy in helpers.each_strategy() do
 
             assert.are.same(6, tonumber(res.headers["x-ratelimit-limit-minute"]))
             assert.are.same(6 - i, tonumber(res.headers["x-ratelimit-remaining-minute"]))
+            assert.are.same(6, tonumber(res.headers["ratelimit-limit"]))
+            assert.are.same(6 - i, tonumber(res.headers["ratelimit-remaining"]))
+            local reset = tonumber(res.headers["ratelimit-reset"])
+            assert.equal(true, reset <= 60 and reset > 0)
           end
 
           for i = 4, 6 do
@@ -299,6 +313,10 @@ for _, strategy in helpers.each_strategy() do
 
             assert.are.same(6, tonumber(res.headers["x-ratelimit-limit-minute"]))
             assert.are.same(6 - i, tonumber(res.headers["x-ratelimit-remaining-minute"]))
+            assert.are.same(6, tonumber(res.headers["ratelimit-limit"]))
+            assert.are.same(6 - i, tonumber(res.headers["ratelimit-remaining"]))
+            local reset = tonumber(res.headers["ratelimit-reset"])
+            assert.equal(true, reset <= 60 and reset > 0)
           end
 
           -- Additonal request, while limit is 6/minute
@@ -306,8 +324,14 @@ for _, strategy in helpers.each_strategy() do
             headers = { Host = "test-service1.com" },
           }, 429)
 
+          assert.are.same(6, tonumber(res.headers["ratelimit-limit"]))
+          assert.are.same(0, tonumber(res.headers["ratelimit-remaining"]))
+
           local retry = tonumber(res.headers["retry-after"])
-          assert.equal(true, retry <= 60 and retry >= 0)
+          assert.equal(true, retry <= 60 and retry > 0)
+
+          local reset = tonumber(res.headers["ratelimit-reset"])
+          assert.equal(true, reset <= 60 and reset > 0)
 
           local json = cjson.decode(body)
           assert.same({ message = "API rate limit exceeded" }, json)
@@ -328,6 +352,10 @@ for _, strategy in helpers.each_strategy() do
             assert.are.same(limits.minute - i, tonumber(res.headers["x-ratelimit-remaining-minute"]))
             assert.are.same(limits.hour, tonumber(res.headers["x-ratelimit-limit-hour"]))
             assert.are.same(limits.hour - i, tonumber(res.headers["x-ratelimit-remaining-hour"]))
+            assert.are.same(limits.minute, tonumber(res.headers["ratelimit-limit"]))
+            assert.are.same(limits.minute - i, tonumber(res.headers["ratelimit-remaining"]))
+            local reset = tonumber(res.headers["ratelimit-reset"])
+            assert.equal(true, reset <= 60 and reset > 0)
           end
 
           local res, body = GET("/status/200", {
@@ -335,10 +363,16 @@ for _, strategy in helpers.each_strategy() do
             headers = { Host = "test2.com" },
           }, 429)
 
-          local retry = tonumber(res.headers["retry-after"])
-          assert.equal(true, retry <= 60 and retry >= 0)
+          assert.are.same(limits.minute, tonumber(res.headers["ratelimit-limit"]))
+          assert.are.same(0, tonumber(res.headers["ratelimit-remaining"]))
           assert.equal(2, tonumber(res.headers["x-ratelimit-remaining-hour"]))
           assert.equal(0, tonumber(res.headers["x-ratelimit-remaining-minute"]))
+
+          local retry = tonumber(res.headers["retry-after"])
+          assert.equal(true, retry <= 60 and retry > 0)
+
+          local reset = tonumber(res.headers["ratelimit-reset"])
+          assert.equal(true, reset <= 60 and reset > 0)
 
           local json = cjson.decode(body)
           assert.same({ message = "API rate limit exceeded" }, json)
@@ -354,6 +388,10 @@ for _, strategy in helpers.each_strategy() do
 
               assert.are.same(6, tonumber(res.headers["x-ratelimit-limit-minute"]))
               assert.are.same(6 - i, tonumber(res.headers["x-ratelimit-remaining-minute"]))
+              assert.are.same(6, tonumber(res.headers["ratelimit-limit"]))
+              assert.are.same(6 - i, tonumber(res.headers["ratelimit-remaining"]))
+              local reset = tonumber(res.headers["ratelimit-reset"])
+              assert.equal(true, reset <= 60 and reset > 0)
             end
 
             -- Third query, while limit is 2/minute
@@ -361,8 +399,14 @@ for _, strategy in helpers.each_strategy() do
               headers = { Host = "test3.com" },
             }, 429)
 
+            assert.are.same(6, tonumber(res.headers["ratelimit-limit"]))
+            assert.are.same(0, tonumber(res.headers["ratelimit-remaining"]))
+
             local retry = tonumber(res.headers["retry-after"])
-            assert.equal(true, retry <= 60 and retry >= 0)
+            assert.equal(true, retry <= 60 and retry > 0)
+
+            local reset = tonumber(res.headers["ratelimit-reset"])
+            assert.equal(true, reset <= 60 and reset > 0)
 
             local json = cjson.decode(body)
             assert.same({ message = "API rate limit exceeded" }, json)
@@ -382,14 +426,24 @@ for _, strategy in helpers.each_strategy() do
 
               assert.are.same(8, tonumber(res.headers["x-ratelimit-limit-minute"]))
               assert.are.same(8 - i, tonumber(res.headers["x-ratelimit-remaining-minute"]))
+              assert.are.same(8, tonumber(res.headers["ratelimit-limit"]))
+              assert.are.same(8 - i, tonumber(res.headers["ratelimit-remaining"]))
+              local reset = tonumber(res.headers["ratelimit-reset"])
+              assert.equal(true, reset <= 60 and reset > 0)
             end
 
             local res, body = GET("/status/200?apikey=apikey122", {
               headers = { Host = "test3.com" },
             }, 429)
 
+            assert.are.same(8, tonumber(res.headers["ratelimit-limit"]))
+            assert.are.same(0, tonumber(res.headers["ratelimit-remaining"]))
+
             local retry = tonumber(res.headers["retry-after"])
-            assert.equal(true, retry <= 60 and retry >= 0)
+            assert.equal(true, retry <= 60 and retry > 0)
+
+            local reset = tonumber(res.headers["ratelimit-reset"])
+            assert.equal(true, reset <= 60 and reset > 0)
 
             local json = cjson.decode(body)
             assert.same({ message = "API rate limit exceeded" }, json)
@@ -403,14 +457,24 @@ for _, strategy in helpers.each_strategy() do
 
               assert.are.same(6, tonumber(res.headers["x-ratelimit-limit-minute"]))
               assert.are.same(6 - i, tonumber(res.headers["x-ratelimit-remaining-minute"]))
+              assert.are.same(6, tonumber(res.headers["ratelimit-limit"]))
+              assert.are.same(6 - i, tonumber(res.headers["ratelimit-remaining"]))
+              local reset = tonumber(res.headers["ratelimit-reset"])
+              assert.equal(true, reset <= 60 and reset > 0)
             end
 
             local res, body = GET("/status/200?apikey=apikey122", {
               headers = { Host = "test4.com" },
             }, 429)
 
+            assert.are.same(6, tonumber(res.headers["ratelimit-limit"]))
+            assert.are.same(0, tonumber(res.headers["ratelimit-remaining"]))
+
             local retry = tonumber(res.headers["retry-after"])
-            assert.equal(true, retry <= 60 and retry >= 0)
+            assert.equal(true, retry <= 60 and retry > 0)
+
+            local reset = tonumber(res.headers["ratelimit-reset"])
+            assert.equal(true, reset <= 60 and reset > 0)
 
             local json = cjson.decode(body)
             assert.same({ message = "API rate limit exceeded" }, json)
@@ -426,6 +490,10 @@ for _, strategy in helpers.each_strategy() do
 
           assert.is_nil(res.headers["x-ratelimit-limit-minute"])
           assert.is_nil(res.headers["x-ratelimit-remaining-minute"])
+          assert.is_nil(res.headers["ratelimit-limit"])
+          assert.is_nil(res.headers["ratelimit-remaining"])
+          assert.is_nil(res.headers["ratelimit-reset"])
+          assert.is_nil(res.headers["retry-after"])
         end)
       end)
 
@@ -474,6 +542,10 @@ for _, strategy in helpers.each_strategy() do
 
             assert.are.same(6, tonumber(res.headers["x-ratelimit-limit-minute"]))
             assert.are.same(5, tonumber(res.headers["x-ratelimit-remaining-minute"]))
+            assert.are.same(6, tonumber(res.headers["ratelimit-limit"]))
+            assert.are.same(5, tonumber(res.headers["ratelimit-remaining"]))
+            local reset = tonumber(res.headers["ratelimit-reset"])
+            assert.equal(true, reset <= 60 and reset > 0)
 
             -- Simulate an error on the database
             assert(db.connector:query("DROP TABLE ratelimiting_metrics"))
@@ -497,6 +569,10 @@ for _, strategy in helpers.each_strategy() do
 
             assert.are.same(6, tonumber(res.headers["x-ratelimit-limit-minute"]))
             assert.are.same(5, tonumber(res.headers["x-ratelimit-remaining-minute"]))
+            assert.are.same(6, tonumber(res.headers["ratelimit-limit"]))
+            assert.are.same(5, tonumber(res.headers["ratelimit-remaining"]))
+            local reset = tonumber(res.headers["ratelimit-reset"])
+            assert.equal(true, reset <= 60 and reset > 0)
 
             -- Simulate an error on the database
             assert(db.connector:query("DROP TABLE ratelimiting_metrics"))
@@ -508,6 +584,9 @@ for _, strategy in helpers.each_strategy() do
 
             assert.falsy(res.headers["x-ratelimit-limit-minute"])
             assert.falsy(res.headers["x-ratelimit-remaining-minute"])
+            assert.falsy(res.headers["ratelimit-limit"])
+            assert.falsy(res.headers["ratelimit-remaining"])
+            assert.falsy(res.headers["ratelimit-reset"])
 
             db:reset()
             bp, db = helpers.get_db_utils(strategy)
@@ -577,6 +656,9 @@ for _, strategy in helpers.each_strategy() do
 
             assert.falsy(res.headers["x-ratelimit-limit-minute"])
             assert.falsy(res.headers["x-ratelimit-remaining-minute"])
+            assert.falsy(res.headers["ratelimit-limit"])
+            assert.falsy(res.headers["ratelimit-remaining"])
+            assert.falsy(res.headers["ratelimit-reset"])
           end)
         end)
       end
@@ -621,6 +703,10 @@ for _, strategy in helpers.each_strategy() do
 
           assert.are.same(6, tonumber(res.headers["x-ratelimit-limit-minute"]))
           assert.are.same(5, tonumber(res.headers["x-ratelimit-remaining-minute"]))
+          assert.are.same(6, tonumber(res.headers["ratelimit-limit"]))
+          assert.are.same(5, tonumber(res.headers["ratelimit-remaining"]))
+          local reset = tonumber(res.headers["ratelimit-reset"])
+          assert.equal(true, reset <= 60 and reset > 0)
 
           ngx.sleep(t) -- Wait for minute to expire
 
@@ -630,6 +716,11 @@ for _, strategy in helpers.each_strategy() do
 
           assert.are.same(6, tonumber(res.headers["x-ratelimit-limit-minute"]))
           assert.are.same(5, tonumber(res.headers["x-ratelimit-remaining-minute"]))
+          assert.are.same(6, tonumber(res.headers["ratelimit-limit"]))
+          assert.are.same(5, tonumber(res.headers["ratelimit-remaining"]))
+          local reset = tonumber(res.headers["ratelimit-reset"])
+          assert.equal(true, reset <= 60 and reset > 0)
+
         end)
       end)
     end)
@@ -692,6 +783,10 @@ for _, strategy in helpers.each_strategy() do
 
           assert.are.same(6, tonumber(res.headers["x-ratelimit-limit-minute"]))
           assert.are.same(6 - i, tonumber(res.headers["x-ratelimit-remaining-minute"]))
+          assert.are.same(6, tonumber(res.headers["ratelimit-limit"]))
+          assert.are.same(6 - i, tonumber(res.headers["ratelimit-remaining"]))
+          local reset = tonumber(res.headers["ratelimit-reset"])
+          assert.equal(true, reset <= 60 and reset > 0)
         end
 
         -- Additonal request, while limit is 6/minute
@@ -699,8 +794,14 @@ for _, strategy in helpers.each_strategy() do
           headers = { Host = "test1.com" },
         }, 429)
 
+        assert.are.same(6, tonumber(res.headers["ratelimit-limit"]))
+        assert.are.same(0, tonumber(res.headers["ratelimit-remaining"]))
+
         local retry = tonumber(res.headers["retry-after"])
-        assert.equal(true, retry <= 60 and retry >= 0)
+        assert.equal(true, retry <= 60 and retry > 0)
+
+        local reset = tonumber(res.headers["ratelimit-reset"])
+        assert.equal(true, reset <= 60 and reset > 0)
 
         local json = cjson.decode(body)
         assert.same({ message = "API rate limit exceeded" }, json)
@@ -753,6 +854,10 @@ for _, strategy in helpers.each_strategy() do
 
           assert.are.same(6, tonumber(res.headers["x-ratelimit-limit-minute"]))
           assert.are.same(6 - i, tonumber(res.headers["x-ratelimit-remaining-minute"]))
+          assert.are.same(6, tonumber(res.headers["ratelimit-limit"]))
+          assert.are.same(6 - i, tonumber(res.headers["ratelimit-remaining"]))
+          local reset = tonumber(res.headers["ratelimit-reset"])
+          assert.equal(true, reset <= 60 and reset > 0)
         end
 
         -- Additonal request, while limit is 6/minute
@@ -760,8 +865,14 @@ for _, strategy in helpers.each_strategy() do
           headers = { Host = "test1.com" },
         }, 429)
 
+        assert.are.same(6, tonumber(res.headers["ratelimit-limit"]))
+        assert.are.same(0, tonumber(res.headers["ratelimit-remaining"]))
+
         local retry = tonumber(res.headers["retry-after"])
-        assert.equal(true, retry <= 60 and retry >= 0)
+        assert.equal(true, retry <= 60 and retry > 0)
+
+        local reset = tonumber(res.headers["ratelimit-reset"])
+        assert.equal(true, reset <= 60 and reset > 0)
 
         local json = cjson.decode(body)
         assert.same({ message = "API rate limit exceeded" }, json)
@@ -813,6 +924,10 @@ for _, strategy in helpers.each_strategy() do
 
           assert.are.same(6, tonumber(res.headers["x-ratelimit-limit-minute"]))
           assert.are.same(6 - i, tonumber(res.headers["x-ratelimit-remaining-minute"]))
+          assert.are.same(6, tonumber(res.headers["ratelimit-limit"]))
+          assert.are.same(6 - i, tonumber(res.headers["ratelimit-remaining"]))
+          local reset = tonumber(res.headers["ratelimit-reset"])
+          assert.equal(true, reset <= 60 and reset > 0)
         end
 
         -- Additonal request, while limit is 6/minute
@@ -820,8 +935,14 @@ for _, strategy in helpers.each_strategy() do
           headers = { Host = "test1.com" },
         }, 429)
 
+        assert.are.same(6, tonumber(res.headers["ratelimit-limit"]))
+        assert.are.same(0, tonumber(res.headers["ratelimit-remaining"]))
+
         local retry = tonumber(res.headers["retry-after"])
-        assert.equal(true, retry <= 60 and retry >= 0)
+        assert.equal(true, retry <= 60 and retry > 0)
+
+        local reset = tonumber(res.headers["ratelimit-reset"])
+        assert.equal(true, reset <= 60 and reset > 0)
 
         local json = cjson.decode(body)
         assert.same({ message = "API rate limit exceeded" }, json)
