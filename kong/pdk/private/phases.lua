@@ -21,7 +21,7 @@ local PHASES = {
   log               = 0x00002000,
   preread           = 0x00004000,
   admin_api         = 0x10000000,
-  cluster_listener  = 0x20000000,
+  cluster_listener  = 0x00000100,
 }
 
 
