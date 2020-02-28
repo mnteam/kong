@@ -187,7 +187,16 @@ local function populate_healthchecker(hc, balancer, upstream)
     if weight > 0 then
       local ipaddr = addr.ip
       local port = addr.port
-      local ok, err = hc:add_target(ipaddr, port, host.hostname, true,
+
+      local new_hostname
+      local https_sni = upstream.healthchecks.active.https_sni
+      if https_sni == nil and https_sni == '' then
+        new_hostname = host.hostname
+      else
+        new_hostname = https_sni
+      end
+
+      local ok, err = hc:add_target(ipaddr, port, new_hostname, true,
                                     upstream.host_header)
       if ok then
         -- Get existing health status which may have been initialized
@@ -246,15 +255,24 @@ do
         local upstream_id = upstream_ids[balancer]
         local upstream = get_upstream_by_id(upstream_id)
 
+        local new_hostname
+        local https_sni = upstream.healthchecks.active.https_sni
+        if https_sni == nil and https_sni == '' then
+          new_hostname = hostname
+        else
+          new_hostname = https_sni
+        end
+
         if action == "added" then
-          local ok, err = healthchecker:add_target(ip, port, hostname, true,
+
+          local ok, err = healthchecker:add_target(ip, port, new_hostname, true,
                                                   upstream.host_header)
           if not ok then
             log(ERR, "[healthchecks] failed adding a target: ", err)
           end
 
         elseif action == "removed" then
-          local ok, err = healthchecker:remove_target(ip, port, hostname)
+          local ok, err = healthchecker:remove_target(ip, port, new_hostname)
           if not ok then
             log(ERR, "[healthchecks] failed removing a target: ", err)
           end
@@ -280,8 +298,10 @@ do
         else
           return
         end
-
-        local hostname = tgt.hostname
+        
+        -- for healthcheck, we have no way to apply the sni
+        --local hostname = tgt.hostname
+        local hostname = tgt.ip
         local ok, err
         ok, err = balancer:setAddressStatus(status, tgt.ip, tgt.port, hostname)
 
